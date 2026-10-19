@@ -1,8 +1,8 @@
 """FraudShield Voice — a clearly labeled simulated Alexa+ experience."""
 import json
-import streamlit as st
-from engine import EXAMPLES, triage
-
+import streamlit as 
+from engine import EXAMPLES
+from agentic import triage
 st.set_page_config(page_title='FraudShield Voice • Alexa+ Simulation', page_icon='🛡️', layout='centered')
 st.title('🛡️ FraudShield Voice')
 st.caption('Alexa+–style simulated experience · Hackathon prototype · No Amazon/Alexa connection')
