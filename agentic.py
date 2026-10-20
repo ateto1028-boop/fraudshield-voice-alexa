@@ -71,6 +71,24 @@ class FraudShieldAgent:
             report["actions"].append("Verify unexpected requests through a trusted independent channel.")
         return report
 
+    @staticmethod
+    def _follow_up(route: str, level: str) -> dict:
+        """Generate transparent, safety-oriented conversation choices, never request secrets."""
+        if route == "credential_request":
+            return {
+                "question": "Did you already share a code or password with the sender? Do not enter the code here.",
+                "choices": ["No, I did not share it", "Yes, I shared it", "I'm not sure"],
+            }
+        if route == "investment_offer":
+            return {
+                "question": "Have you already sent money to this person or platform? Do not enter financial details.",
+                "choices": ["No money sent", "Yes, I sent money", "I'm not sure"],
+            }
+        return {
+            "question": "Would you like safer next steps for this message?",
+            "choices": ["Show verification steps", "Show warning signs"],
+        }
+
     def run(self, message: str) -> dict:
         if not isinstance(message, str) or not message.strip():
             return {"error": "Please enter a message to inspect."}
@@ -101,9 +119,30 @@ class FraudShieldAgent:
             previous = [str(previous)]
         report["tools_called"] = calls + [str(x) for x in previous]
         report["agent_route"] = route
+        report["follow_up"] = self._follow_up(route, report.get("risk_level", "Low"))
         return report
 
 
 def triage(message: str) -> dict:
     """Drop-in, backward-compatible replacement for engine.triage."""
     return FraudShieldAgent().run(message)
+
+
+def follow_up_advice(report: dict, selection: str) -> str:
+    """Handle limited follow-ups without collecting private identifiers or secrets."""
+    route = report.get("agent_route")
+    if route == "credential_request":
+        if selection == "Yes, I shared it":
+            return "Immediately change the affected password through the official site, revoke active sessions if available, enable MFA, and contact the provider's fraud team. Never share another code."
+        if selection == "No, I did not share it":
+            return "Do not reply or share any code. Open the provider's official app independently to check alerts and report the message."
+        return "Review account activity in the official app and contact the provider using a verified support channel. Never paste codes here."
+    if route == "investment_offer":
+        if selection == "Yes, I sent money":
+            return "Stop all additional payments, preserve transaction records and messages, and promptly contact your bank, exchange, or payment provider and appropriate authorities. Avoid anyone demanding upfront recovery fees."
+        if selection == "No money sent":
+            return "Do not transfer funds or pay withdrawal fees. Verify the company and claims independently; guaranteed returns are a warning sign."
+        return "Check bank or exchange history through official channels and preserve any relevant evidence. Avoid further payments until verified."
+    if selection == "Show warning signs":
+        return "Review unsolicited urgency, requests for codes or money, unusual links, secrecy, and guaranteed returns. Absence of these patterns does not establish safety."
+    return "Check the request independently using contact details from the official app or website. Do not use links or numbers supplied in the suspicious message."

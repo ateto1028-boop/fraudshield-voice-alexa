@@ -28,6 +28,22 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(result['agent_route'], 'general_message')
         self.assertEqual(result['risk_score'], 10)
 
+    def test_follow_up_for_credentials(self):
+        result = self.run_agent('Send your OTP verification code now')
+        self.assertIn('code', result['follow_up']['question'])
+        advice = agentic.follow_up_advice(result, 'Yes, I shared it')
+        self.assertIn('change', advice.lower())
+
+    def test_follow_up_investment(self):
+        result = self.run_agent('Guaranteed investment profit: deposit now')
+        advice = agentic.follow_up_advice(result, 'Yes, I sent money')
+        self.assertIn('preserve', advice.lower())
+
+    def test_follow_up_normal(self):
+        result = self.run_agent('Meeting reminder for tomorrow')
+        advice = agentic.follow_up_advice(result, 'Show verification steps')
+        self.assertIn('independently', advice)
+
     def test_empty(self):
         self.assertIn('error', agentic.triage(''))
 

@@ -2,7 +2,7 @@
 import json
 import streamlit as st
 from engine import EXAMPLES
-from agentic import triage
+from agentic import triage, follow_up_advice
 st.set_page_config(page_title='FraudShield Voice • Alexa+ Simulation', page_icon='🛡️', layout='centered')
 st.title('🛡️ FraudShield Voice')
 st.caption('Alexa+–style simulated experience · Hackathon prototype · No Amazon/Alexa connection')
@@ -54,7 +54,14 @@ if st.session_state.chat:
         for i, tool in enumerate(report['tools_called'], 1):
             st.code(f'{i}. {tool}(...)')
         st.json({'links_detected': report['links_detected'], 'scope': report['scope']})
-    st.download_button('Download analysis as JSON', json.dumps(report, indent=2), file_name='fraudshield_analysis.json', mime='application/json')
+    st.markdown('**Follow-up conversation (optional)**')
+    question = report.get('follow_up')
+    if question:
+        st.write(question['question'])
+        answer = st.radio('Choose an answer (do not enter sensitive information)',
+                          question['choices'], key=f"followup_{len(st.session_state.chat)}_{report['agent_route']}")
+        st.info(follow_up_advice(report, answer))
+    st.download_button('Download analysis as JSON' , json.dumps(report, indent=2), file_name='fraudshield_analysis.json', mime='application/json')
 
 st.divider()
 st.caption('Prototype built for Build, Ship, Shape: Amazon Developer Hackathon 2026 · Alexa+ simulated-experience route.')
